@@ -25,6 +25,7 @@ async function main() {
   // Health Checker
   app.get("/api/healthchecker", (req: Request, res: Response) => {
     resCall(
+      res,
       {
         status: "success",
         message: "Two Factor Authentication Health Checker",
@@ -39,6 +40,7 @@ async function main() {
   // Catch All
   app.all("*", (req: Request, res: Response) => {
     return resCall(
+      res,
       { status: "fail", message: `Route: ${req.originalUrl} not found` },
       404
     );

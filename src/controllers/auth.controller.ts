@@ -19,6 +19,7 @@ const RegisterUser = catchAsync(async (req: Request, res: Response) => {
     });
 
     resCall(
+      res,
       { status: "success", message: "Registered successfully, Please login" },
       200
     );
@@ -26,6 +27,7 @@ const RegisterUser = catchAsync(async (req: Request, res: Response) => {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
         return resCall(
+          res,
           {
             status: "fail",
             message: "Email already exist, Please user another email address",
@@ -34,7 +36,7 @@ const RegisterUser = catchAsync(async (req: Request, res: Response) => {
         );
       }
 
-      return resCall({ status: "error", message: error.message }, 500);
+      return resCall(res, { status: "error", message: error.message }, 500);
     }
   }
 });
@@ -47,6 +49,7 @@ const LoginUser = catchAsync(async (req: Request, res: Response) => {
 
     if (!user) {
       return resCall(
+        res,
         { status: "fail", message: "No user with that email exists" },
         404
       );
@@ -57,7 +60,7 @@ const LoginUser = catchAsync(async (req: Request, res: Response) => {
       email: user.email,
       otp_enabled: user.otp_enabled,
     };
-    resCall({ status: "success", userRes }, 200);
+    resCall(res, { status: "success", userRes }, 200);
   } catch (err) {}
 });
 
@@ -80,9 +83,9 @@ const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
       },
     });
 
-    resCall({ base32, otpauth_url }, 200);
+    resCall(res, { base32, otpauth_url }, 200);
   } catch (err) {
-    resCall({ status: "error", message: err.message }, 500);
+    resCall(res, { status: "error", message: err.message }, 500);
   }
 });
 
@@ -92,7 +95,7 @@ const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({ where: { id: userid } });
     const message = "Token is invalid or user doesn't exist";
     if (!user) {
-      return resCall({ status: "fail", message }, 401);
+      return resCall(res, { status: "fail", message }, 401);
     }
 
     const verified = totp.verify({
@@ -102,7 +105,7 @@ const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
     });
 
     if (!verified) {
-      return resCall({ status: "fail", message }, 401);
+      return resCall(res, { status: "fail", message }, 401);
     }
 
     const updatedUser = await prisma.user.update({
@@ -114,6 +117,7 @@ const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
     });
 
     resCall(
+      res,
       {
         otp_verified: true,
         user: {
@@ -126,7 +130,7 @@ const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
       200
     );
   } catch (err) {
-    resCall({ status: "error", message: err.message }, 500);
+    resCall(res, { status: "error", message: err.message }, 500);
   }
 });
 
@@ -137,7 +141,7 @@ const ValidateOTP = catchAsync(async (req: Request, res: Response) => {
 
     const message = "Token is invalid or user doesn't exist";
     if (!user) {
-      return resCall({ status: "fail", message }, 401);
+      return resCall(res, { status: "fail", message }, 401);
     }
 
     const validToken = totp.verify({
@@ -147,22 +151,26 @@ const ValidateOTP = catchAsync(async (req: Request, res: Response) => {
     });
 
     if (!validToken) {
-      return resCall({ status: "fail", message }, 401);
+      return resCall(res, { status: "fail", message }, 401);
     }
 
-    return resCall({ otp_valid: true }, 200);
+    return resCall(res, { otp_valid: true }, 200);
   } catch (err) {
-    resCall({ status: "error", message: err.message }, 500);
+    resCall(res, { status: "error", message: err.message }, 500);
   }
 });
 
-const DisableOTP = catchAsync(async (req: Request, res: Request) => {
+const DisableOTP = catchAsync(async (req: Request, res: Response) => {
   try {
     const { userid } = req.body;
 
     const user = await prisma.user.findUnique({ where: { id: userid } });
     if (!user) {
-      return resCall({ status: "fail", message: "User doesn't exist" }, 401);
+      return resCall(
+        res,
+        { status: "fail", message: "User doesn't exist" },
+        401
+      );
     }
 
     const updateUser = await prisma.user.update({
@@ -173,6 +181,7 @@ const DisableOTP = catchAsync(async (req: Request, res: Request) => {
     });
 
     resCall(
+      res,
       {
         otp_disabled: true,
         user: {
@@ -185,7 +194,7 @@ const DisableOTP = catchAsync(async (req: Request, res: Request) => {
       200
     );
   } catch (err) {
-    resCall({ status: "error", message: err.message }, 500);
+    resCall(res, { status: "error", message: err.message }, 500);
   }
 });
 
