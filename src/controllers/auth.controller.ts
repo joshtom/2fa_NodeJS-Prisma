@@ -189,7 +189,7 @@ const DisableOTP = catchAsync(async (req: Request, res: Request) => {
   }
 });
 
-export {
+export default {
   RegisterUser,
   LoginUser,
   GenerateOTP,
