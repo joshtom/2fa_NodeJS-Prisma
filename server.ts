@@ -4,6 +4,7 @@ import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import { resCall } from "./src/helpers/resCall";
+import authRouter from "./src/routes/auth.route";
 
 export const prisma = new PrismaClient();
 const app = express();
@@ -33,6 +34,7 @@ async function main() {
   });
 
   // Register the API Routes
+  app.use("/v1/api/auth", authRouter);
 
   // Catch All
   app.all("*", (req: Request, res: Response) => {
