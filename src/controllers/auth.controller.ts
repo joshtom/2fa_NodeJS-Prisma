@@ -36,4 +36,25 @@ const RegisterUser = catchAsync(
   }
 );
 
-export { RegisterUser };
+const LoginUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, password } = req.body;
+
+      const user = await prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        return resCall(res, "fail", "No user with that email exists", 404);
+      }
+      const userRes = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        otp_enabled: user.otp_enabled,
+      };
+      resCall(res, "success", userRes, 200);
+    } catch (err) {}
+  }
+);
+
+export { RegisterUser, LoginUser };
