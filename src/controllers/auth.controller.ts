@@ -136,4 +136,32 @@ const VerifyOTP = catchAsync(
   }
 );
 
-export { RegisterUser, LoginUser, GenerateOTP };
+const ValidateOTP = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { userid, token } = req.body;
+      const user = await prisma.user.findUnique({ where: { id: userid } });
+
+      const message = "Token is invalid or user doesn't exist";
+      if (!user) {
+        return resCall({ status: "fail", message }, 401);
+      }
+
+      const validToken = totp.verify({
+        secret: user?.otp_base32 as string,
+        token,
+        window: 1,
+      });
+
+      if (!validToken) {
+        return resCall({ status: "fail", message }, 401);
+      }
+
+      return resCall({ otp_valid: true }, 200);
+    } catch (err) {
+      resCall({ status: "error", message: err.message }, 500);
+    }
+  }
+);
+
+export { RegisterUser, LoginUser, GenerateOTP, VerifyOTP };
