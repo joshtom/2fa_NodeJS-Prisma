@@ -4,7 +4,7 @@ import { prisma } from "../../server";
 import { catchAsync } from "../utils/catchAsync";
 import { resCall } from "../helpers/resCall";
 import { Prisma } from "@prisma/client";
-import { totp, generateSecret } from "speakeasy";
+import speakeasy from "speakeasy";
 
 const RegisterUser = catchAsync(async (req: Request, res: Response) => {
   try {
@@ -67,8 +67,8 @@ const LoginUser = catchAsync(async (req: Request, res: Response) => {
 const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
   try {
     const { userid } = req.body;
-    const { ascii, hex, base32, otpauth_url } = generateSecret({
-      issuer: "http://localhost:8000",
+    const { ascii, hex, base32, otpauth_url } = speakeasy.generateSecret({
+      issuer: "codevoweb.com",
       name: "admin@admin.com",
       length: 15,
     });
@@ -83,8 +83,13 @@ const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
       },
     });
 
-    resCall(res, { base32, otpauth_url }, 200);
+    // resCall(res, { base32, otpauth_url }, 200);
+    res.status(200).json({
+      base32,
+      otpauth_url,
+    });
   } catch (err) {
+    console.log("THe error", err);
     resCall(res, { status: "error", message: err.message }, 500);
   }
 });
@@ -98,7 +103,7 @@ const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
       return resCall(res, { status: "fail", message }, 401);
     }
 
-    const verified = totp.verify({
+    const verified = speakeasy.totp.verify({
       secret: user.otp_base32!,
       encoding: "base32",
       token,
@@ -144,7 +149,7 @@ const ValidateOTP = catchAsync(async (req: Request, res: Response) => {
       return resCall(res, { status: "fail", message }, 401);
     }
 
-    const validToken = totp.verify({
+    const validToken = speakeasy.totp.verify({
       secret: user?.otp_base32 as string,
       token,
       window: 1,
