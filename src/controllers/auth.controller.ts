@@ -60,13 +60,13 @@ const LoginUser = catchAsync(async (req: Request, res: Response) => {
       email: user.email,
       otp_enabled: user.otp_enabled,
     };
-    resCall(res, { status: "success", userRes }, 200);
+    resCall(res, { status: "success", user: userRes }, 200);
   } catch (err) {}
 });
 
 const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
   try {
-    const { userid } = req.body;
+    const { user_id } = req.body;
     const { ascii, hex, base32, otpauth_url } = speakeasy.generateSecret({
       issuer: "codevoweb.com",
       name: "admin@admin.com",
@@ -74,7 +74,7 @@ const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
     });
 
     await prisma.user.update({
-      where: { id: userid },
+      where: { id: user_id },
       data: {
         otp_ascii: ascii,
         otp_auth_url: otpauth_url,
@@ -96,8 +96,8 @@ const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
 
 const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
   try {
-    const { userid, token } = req.body;
-    const user = await prisma.user.findUnique({ where: { id: userid } });
+    const { user_id, token } = req.body;
+    const user = await prisma.user.findUnique({ where: { id: user_id } });
     const message = "Token is invalid or user doesn't exist";
     if (!user) {
       return resCall(res, { status: "fail", message }, 401);
@@ -114,7 +114,7 @@ const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: userid },
+      where: { id: user_id },
       data: {
         otp_enabled: true,
         otp_verified: true,
@@ -141,22 +141,28 @@ const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
 
 const ValidateOTP = catchAsync(async (req: Request, res: Response) => {
   try {
-    const { userid, token } = req.body;
-    const user = await prisma.user.findUnique({ where: { id: userid } });
+    const { user_id, token } = req.body;
+    const user = await prisma.user.findUnique({ where: { id: user_id } });
 
     const message = "Token is invalid or user doesn't exist";
     if (!user) {
       return resCall(res, { status: "fail", message }, 401);
     }
 
+    console.log("User otp", token);
     const validToken = speakeasy.totp.verify({
-      secret: user?.otp_base32 as string,
+      secret: user?.otp_base32!,
+      encoding: 'base32',
       token,
       window: 1,
     });
 
     if (!validToken) {
-      return resCall(res, { status: "fail", message }, 401);
+      return resCall(
+        res,
+        { status: "fail", message },
+        401
+      );
     }
 
     return resCall(res, { otp_valid: true }, 200);
@@ -167,9 +173,9 @@ const ValidateOTP = catchAsync(async (req: Request, res: Response) => {
 
 const DisableOTP = catchAsync(async (req: Request, res: Response) => {
   try {
-    const { userid } = req.body;
+    const { user_id } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { id: userid } });
+    const user = await prisma.user.findUnique({ where: { id: user_id } });
     if (!user) {
       return resCall(
         res,
@@ -179,7 +185,7 @@ const DisableOTP = catchAsync(async (req: Request, res: Response) => {
     }
 
     const updateUser = await prisma.user.update({
-      where: { id: userid },
+      where: { id: user_id },
       data: {
         otp_enabled: false,
       },
