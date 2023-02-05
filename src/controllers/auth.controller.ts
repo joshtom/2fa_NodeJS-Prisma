@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import crypto, { verify } from "crypto";
+import crypto from "crypto";
 import { prisma } from "../../server";
 import { catchAsync } from "../utils/catchAsync";
 import { resCall } from "../helpers/resCall";
@@ -64,7 +64,7 @@ const LoginUser = catchAsync(async (req: Request, res: Response) => {
 const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
   try {
     const { userid } = req.body;
-    const {} = generateSecret({
+    const { ascii, hex, base32, otpauth_url } = generateSecret({
       issuer: "http://localhost:8000",
       name: "admin@admin.com",
       length: 15,
@@ -74,14 +74,16 @@ const GenerateOTP = catchAsync(async (req: Request, res: Response) => {
       where: { id: userid },
       data: {
         otp_ascii: ascii,
-        otp_auth_url: otpauthurl,
+        otp_auth_url: otpauth_url,
         otp_base32: base32,
         otp_hex: hex,
       },
     });
 
-    resCall(res, { base32, otpauthurl }, 200);
-  } catch (err) {}
+    resCall({ base32, otpauth_url }, 200);
+  } catch (err) {
+    resCall({ status: "error", message: err.message }, 500);
+  }
 });
 
 const VerifyOTP = catchAsync(async (req: Request, res: Response) => {
