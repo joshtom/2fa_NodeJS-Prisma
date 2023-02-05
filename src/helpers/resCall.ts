@@ -1,14 +1,9 @@
 import { Response } from "express";
 
-const resCall = (
-  res: Response,
-  status: string,
-  message: any,
-  statusCode: number
-) => {
+let res: Response;
+const resCall = (data: any, statusCode: number) => {
   res.status(statusCode).json({
-    status,
-    message,
+    ...data,
   });
 };
 

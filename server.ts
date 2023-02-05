@@ -23,14 +23,23 @@ async function main() {
 
   // Health Checker
   app.get("/api/healthchecker", (req: Request, res: Response) => {
-    resCall(res, "success", "Two Factor Authentication Health Checker", 200);
+    resCall(
+      {
+        status: "success",
+        message: "Two Factor Authentication Health Checker",
+      },
+      200
+    );
   });
 
   // Register the API Routes
 
   // Catch All
   app.all("*", (req: Request, res: Response) => {
-    return resCall(res, "fail", `Route: ${req.originalUrl} not found`, 404);
+    return resCall(
+      { status: "fail", message: `Route: ${req.originalUrl} not found` },
+      404
+    );
   });
 
   app.listen(process.env.PORT, () => {
